@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset='utf-8'><title>AI Home Automation</title></head>
+<body>
+<h1>AI Home Automation System</h1>
+<div id='devices'>Loading devices...</div>
+
+<script>
+let ws=new WebSocket("ws://"+location.host+"/ws");
+ws.onopen=()=> ws.send(JSON.stringify({cmd:'list'}));
+ws.onmessage=(e)=>{
+  const d=JSON.parse(e.data);
+  if(d.type==='list'){ render(d.devices); }
+  if(d.type==='update'){
+    document.getElementById('state_'+d.device_id).innerText=d.state?'ON':'OFF';
+  }
+  if(d.type==='recommendation'){
+    document.getElementById('rec_'+d.device_id).innerText='Suggested: '+d.suggest+' (p='+d.prob.toFixed(2)+')';
+  }
+};
+function render(devs){
+  let c=document.getElementById('devices'); c.innerHTML='';
+  for(const id in devs){
+    const v=devs[id];
+    c.innerHTML+=`<div>
+      <b>${v.name}</b> —
+      <span id="state_${id}">${v.state?'ON':'OFF'}</span>
+      <button onclick="toggle('${id}')">Toggle</button>
+      <span id="rec_${id}"></span>
+    </div>`;
+  }
+}
+function toggle(id){
+  ws.send(JSON.stringify({cmd:'toggle',device_id:id}));
+}
+</script>
+</body>
+</html>
